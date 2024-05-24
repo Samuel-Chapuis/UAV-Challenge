@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Custom Layout</title>
+    <style>
+      body {
+        display: flex;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .sidebar {
+        width: 20%;
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar button {
+        flex: 1;
+        background-color: #003366; /* Bleu foncé */
+        border: none;
+        color: white;
+        font-size: 20px;
+        font-family: Arial, sans-serif;
+        margin: 1px 0;
+        cursor: pointer;
+      }
+      .main-content {
+        width: 80%;
+        display: flex;
+        flex-direction: column;
+      }
+      .camera, .map {
+        flex: 1;
+        border: 1px solid black;
+      }
+      .camera {
+        background-color: fuchsia;
+      }
+      .map {
+        background-color: orange;
+      }
+    </style>
+    <script>
+      function sendAction(actionId) {
+        fetch(`/action/${actionId}`, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            console.log(data.result);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <div class="sidebar">
+      <button onclick="sendAction(1)">Larguer !</button>
+      <button onclick="sendAction(2)">Action 2</button>
+      <button onclick="sendAction(3)">Action 3</button>
+      <button onclick="sendAction(4)">Action 4</button>
+      <button onclick="sendAction(5)">Action 5</button>
+      <button onclick="sendAction(6)">Action 6</button>
+    </div>
+    <div class="main-content">
+      <div class="camera">
+        <img src="{{ url_for('video_feed') }}" width="100%" height="100%">
+      </div>
+      <div class="map">
+        {{ map|safe }}
+      </div>
+    </div>
+  </body>
+</html>
