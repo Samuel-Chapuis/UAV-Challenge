@@ -10,7 +10,7 @@ import numpy as np
 
 #IMPORT DES FICHIER NECESSAIRES
 from reco import reco
-from test import jirachi
+from servoW import larguer
 
 app = Flask(__name__)
 
@@ -57,9 +57,13 @@ def action(action_id):
         print("Action 1 exécutée")
         return jsonify(result="Action 1 exécutée")
     elif action_id == 2:
+        thread = Thread(target=reco)
+        thread.start()
         print("Action 2 exécutée")
         return jsonify(result="Action 2 exécutée")
     elif action_id == 3:
+        thread = Thread(target=larguer)
+        thread.start()
         print("Action 3 exécutée")
         return jsonify(result="Action 3 exécutée")
     elif action_id == 4:
