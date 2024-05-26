@@ -1,8 +1,22 @@
-from flask import Flask, render_template, Response, jsonify
+# IMPORT DES LIBRAIRIES NECESSAIRES
+from flask import Flask, render_template, Response, jsonify, request
 import cv2
 import folium
+import tkinter as tk
+from threading import Thread
+import time
+import cv2
+import numpy as np
+
+#IMPORT DES FICHIER NECESSAIRES resetServo
+from reco import reco
+from Mavlink import larguer
+from Mavlink import armer
+from Mavlink import resetServo
 
 app = Flask(__name__)
+
+
 
 # Générer la carte avec Folium
 def generate_map():
@@ -10,9 +24,10 @@ def generate_map():
     folium.Marker([45.5236, -122.6750], popup='Location').add_to(m)
     return m._repr_html_()
 
+
 # Capture vidéo avec OpenCV
 def gen_frames():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     while True:
         success, frame = cap.read()
         if not success:
@@ -35,19 +50,29 @@ def video_feed():
 @app.route('/action/<int:action_id>', methods=['POST'])
 def action(action_id):
     if action_id == 1:
-        print("Action 1 exécutée")
+        thread = Thread(target=arm)
+        thread.start()
+        print("Action 1 exécutée (Arm) ")
         return jsonify(result="Action 1 exécutée")
     elif action_id == 2:
-        print("Action 2 exécutée")
-        return jsonify(result="Action 2 exécutée")
+        latitude = 45.434408
+        longitude = -0.428607
+        print("Action 2 exécutée (GPS) ")
+        return jsonify(result="Action 2 exécutée", latitude=latitude, longitude=longitude)
     elif action_id == 3:
-        print("Action 3 exécutée")
+        thread = Thread(target=larguer)
+        thread.start()
+        print("Action 3 exécutée (Larguer) ")
         return jsonify(result="Action 3 exécutée")
     elif action_id == 4:
-        print("Action 4 exécutée")
+        thread = Thread(target=resetServo)
+        thread.start()
+        print("Action 4 exécutée (ResetServo) ")
         return jsonify(result="Action 4 exécutée")
     elif action_id == 5:
-        print("Action 5 exécutée")
+        thread = Thread( target=reco(cap)   )
+        thread.start()
+        print("Action 5 en cours (reco) !!")
         return jsonify(result="Action 5 exécutée")
     elif action_id == 6:
         print("Action 6 exécutée")

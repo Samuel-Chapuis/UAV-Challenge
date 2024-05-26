@@ -32,18 +32,33 @@
         display: flex;
         flex-direction: column;
       }
-      .camera, .map {
+      .camera {
         flex: 1;
         border: 1px solid black;
-      }
-      .camera {
         background-color: fuchsia;
+        overflow: hidden;
       }
       .map {
+        flex: 1;
+        border: 1px solid black;
         background-color: orange;
+        position: relative;
+      }
+      #mapid {
+        width: 100%;
+        height: 100%;
       }
     </style>
     <script>
+      let map;
+      let marker;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const initialLatitude = 45.5236;
+        const initialLongitude = -122.6750;
+        initializeMap(initialLatitude, initialLongitude);
+      });
+
       function sendAction(actionId) {
         fetch(`/action/${actionId}`, { 
           method: 'POST',
@@ -53,30 +68,55 @@
         })
           .then(response => response.json())
           .then(data => {
+            if (actionId === 2) {
+              updateMap(data.latitude, data.longitude);
+            }
             console.log(data.result);
           })
           .catch(error => {
             console.error('Error:', error);
           });
       }
+
+      function initializeMap(latitude, longitude) {
+        const mapDiv = document.getElementById('mapid');
+        map = L.map(mapDiv).setView([latitude, longitude], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        marker = L.marker([latitude, longitude]).addTo(map)
+          .bindPopup('Initial Location')
+          .openPopup();
+      }
+
+      function updateMap(latitude, longitude) {
+        map.setView([latitude, longitude], 13);
+        marker.setLatLng([latitude, longitude])
+          .bindPopup('New Location')
+          .openPopup();
+      }
     </script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   </head>
   <body>
     <div class="sidebar">
-      <button onclick="sendAction(1)">Larguer !</button>
-      <button onclick="sendAction(2)">Action 2</button>
-      <button onclick="sendAction(3)">Action 3</button>
-      <button onclick="sendAction(4)">Action 4</button>
-      <button onclick="sendAction(5)">Action 5</button>
+      <button onclick="sendAction(1)">Arm / Disarm</button>
+      <button onclick="sendAction(2)">Set GPS</button>
+      <button onclick="sendAction(3)">Larguer</button>
+      <button onclick="sendAction(4)">Reset Servo</button>
+      <button onclick="sendAction(5)">Demarer la reco</button>
       <button onclick="sendAction(6)">Action 6</button>
+      <button onclick="sendAction(7)">Action 7</button>
+      <button onclick="sendAction(8)">Action 8</button>
     </div>
     <div class="main-content">
       <div class="camera">
         <img src="{{ url_for('video_feed') }}" width="100%" height="100%">
       </div>
-      <div class="map">
-        {{ map|safe }}
-      </div>
+      <div class="map" id="mapid"></div>
     </div>
   </body>
 </html>

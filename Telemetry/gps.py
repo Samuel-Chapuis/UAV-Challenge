@@ -10,7 +10,7 @@ def extract_lat_lon(data):
     return lat, lon
 
 # Connexion MAVLink
-master = mavutil.mavlink_connection('com5', 57600)
+master = mavutil.mavlink_connection('com3', 57600)
 
 # Attendre le heartbeat
 master.wait_heartbeat()

@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 # Initialisation de la capture vidéo
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 if not cap.isOpened():
     print("Erreur : Impossible d'ouvrir la webcam")

@@ -1,22 +1,8 @@
 from flask import Flask, render_template, Response, jsonify
 import cv2
 import folium
-import tkinter as tk
-from threading import Thread
-import time
-import cv2
-import numpy as np
 
 app = Flask(__name__)
-
-
-def parallel_function():
-    # Fonction à exécuter en parallèle
-    for i in range(10):
-        print(f'Parallel function iteration {i}')
-        time.sleep(1)
-        
-        
 
 # Générer la carte avec Folium
 def generate_map():
@@ -26,7 +12,7 @@ def generate_map():
 
 # Capture vidéo avec OpenCV
 def gen_frames():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     while True:
         success, frame = cap.read()
         if not success:
@@ -49,8 +35,6 @@ def video_feed():
 @app.route('/action/<int:action_id>', methods=['POST'])
 def action(action_id):
     if action_id == 1:
-        thread = Thread(target=parallel_function)
-        thread.start()
         print("Action 1 exécutée")
         return jsonify(result="Action 1 exécutée")
     elif action_id == 2:
