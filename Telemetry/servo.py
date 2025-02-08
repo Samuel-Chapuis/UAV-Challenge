@@ -46,7 +46,7 @@ print("Heartbeat from system (system %u component %u)" % (master.target_system, 
 # time.sleep(1)                  #
 # set_servo(10, 2000)            #
 
-set_servo(10, 1500)        # RESET BRUITS
+set_servo(10, 4000)        # RESET BRUITS
 
 
 # wait_time = 0.5 # Temps d'attente en secondes

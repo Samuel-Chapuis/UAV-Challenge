@@ -17,7 +17,7 @@ from Mavlink import larguer, armer, resetServo
 app = Flask(__name__)
 
 # Initialisation de la capture vidéo globale
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 # Générer la carte avec Folium
 def generate_map():

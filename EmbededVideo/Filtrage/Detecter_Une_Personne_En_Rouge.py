@@ -2,10 +2,6 @@ import cv2
 import numpy as np
 import time
 
-while True:
-    if cv2.waitKey(1) & 0xFF == 27:
-        break
-
 # Initialisation de la capture vidéo
 cap = cv2.VideoCapture(0)
 
@@ -15,7 +11,7 @@ if not cap.isOpened():
 
 detected = False
 detection_start_time = 0
-min_area = 500  # Seuil minimum de taille en pixels pour les contours
+min_area = 100  # Seuil minimum de taille en pixels pour les contours
 
 while True:
     ret, frame = cap.read()
@@ -27,11 +23,11 @@ while True:
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
     # Définition des seuils de couleur pour détecter le rouge
-    lower_red = np.array([0, 90, 80])
-    upper_red = np.array([0, 255, 255])
+    lower_red = np.array([0, 100, 70])
+    upper_red = np.array([10, 255, 255])
     mask1 = cv2.inRange(hsv, lower_red, upper_red)
     
-    lower_red = np.array([120, 110, 70])
+    lower_red = np.array([170, 110, 70])
     upper_red = np.array([180, 255, 255])
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
     
@@ -51,7 +47,7 @@ while True:
             detection_start_time = time.time()
             detected = True
         else:
-            if time.time() - detection_start_time >= 1:
+            if time.time() - detection_start_time >= 0.5:
                 # Dessiner les contours et afficher le message
                 for contour in valid_contours:
                     x, y, w, h = cv2.boundingRect(contour)

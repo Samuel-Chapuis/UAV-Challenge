@@ -29,7 +29,7 @@ def close_existing_connections(port_name):
 
 def larguer():
 	# Connexion au drone
-	#close_existing_connections('com5')
+	#close_existing_connections('com3')
 	master = mavutil.mavlink_connection('com3', 57600)
 
 	# Attendre un signal heartbeat pour vérifier la connexion
@@ -44,7 +44,7 @@ def larguer():
         mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
         0,                # confirmation
         10,     # numéro du servo (de 1 à 8 en général)
-        2000,        # valeur PWM à envoyer au servo (en microsecondes, typiquement entre 1000 et 2000)
+        4000,        # valeur PWM à envoyer au servo (en microsecondes, typiquement entre 1000 et 2000)
         0, 0, 0, 0, 0, 0  # paramètres non utilisés
     )
 	print("Mini drone largué !")

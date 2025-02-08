@@ -27,11 +27,11 @@ def reco(cap):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Définition des seuils de couleur pour détecter le rouge
-        lower_red = np.array([0, 100, 70])
-        upper_red = np.array([10, 255, 255])
+        lower_red = np.array([0, 120, 90])
+        upper_red = np.array([20, 255, 255])
         mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-        lower_red = np.array([170, 110, 70])
+        lower_red = np.array([160, 120, 70])
         upper_red = np.array([180, 255, 255])
         mask2 = cv2.inRange(hsv, lower_red, upper_red)
 
@@ -51,7 +51,7 @@ def reco(cap):
                 detection_start_time = time.time()
                 detected = True
             else:
-                if time.time() - detection_start_time >= 0.5:
+                if time.time() - detection_start_time >= 0.8:
                     # Dessiner les contours et afficher le message
                     for contour in valid_contours:
                         x, y, w, h = cv2.boundingRect(contour)
@@ -66,7 +66,7 @@ def reco(cap):
                         mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
                         0,                # confirmation
                         10,     # numéro du servo (de 1 à 8 en général)
-                        2000,        # valeur PWM à envoyer au servo (en microsecondes, typiquement entre 1000 et 2000)
+                        4000,        # valeur PWM à envoyer au servo (en microsecondes, typiquement entre 1000 et 2000)
                         0, 0, 0, 0, 0, 0  # paramètres non utilisés
                     )
                     print("Mini drone largué !")
