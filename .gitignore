@@ -1,3 +1,6 @@
 # Web
 Web
 .__pycache__
+/EmbededVideo/CustomAiModel/labelImg
+/EmbededVideo/CustomAiModel/RawData
+/EmbededVideo/CustomAiModel/PreProcess
