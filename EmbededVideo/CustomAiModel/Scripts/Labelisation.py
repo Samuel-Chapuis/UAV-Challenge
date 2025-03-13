@@ -1,22 +1,15 @@
-import os
 import subprocess
+import sys
 
-# Définir le chemin des images et des annotations
-IMAGE_DIR = "images"  # Dossier où sont stockées les images
-LABEL_DIR = "labels"  # Dossier où seront sauvegardées les annotations
-FORMAT = "yolo"  # Choisir entre "yolo" et "pascal"
+def open_labelimg():
+    try:
+        # Essayer d'exécuter LabelImg
+        subprocess.run(["labelImg"], check=True)
+    except FileNotFoundError:
+        print("❌ LabelImg n'est pas installé. Installation en cours...")
+        subprocess.run([sys.executable, "-m", "pip", "install", "labelImg"])
+        print("✅ Installation terminée. Lancement de LabelImg...")
+        subprocess.run(["labelImg"])
 
-# Vérifier et installer LabelImg si nécessaire
-try:
-    import labelImg
-except ImportError:
-    print("Installation de LabelImg...")
-    subprocess.run(["pip", "install", "labelImg"], check=True)
-
-# Créer le dossier de labels s'il n'existe pas
-if not os.path.exists(LABEL_DIR):
-    os.makedirs(LABEL_DIR)
-
-# Lancer LabelImg avec les bons paramètres
-print(f"Ouverture de LabelImg pour annoter les images de {IMAGE_DIR}...")
-subprocess.run(["labelImg", IMAGE_DIR, LABEL_DIR, FORMAT])
+if __name__ == "__main__":
+    open_labelimg()

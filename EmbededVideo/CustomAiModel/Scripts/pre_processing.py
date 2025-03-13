@@ -42,7 +42,7 @@ def process_image(image_path, output_folder):
     # Augmenter la saturation du rouge
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     h, s, v = cv2.split(hsv)
-    s = cv2.addWeighted(s, 1.5, np.zeros_like(s), 0, 0)  # Augmenter la saturation
+    s = cv2.addWeighted(s, 5, np.zeros_like(s), 0, 0)  # Augmenter la saturation
     hsv = cv2.merge((h, s, v))
     image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
@@ -53,7 +53,7 @@ def process_image(image_path, output_folder):
  
 if __name__ == '__main__':
 	input_folder = "EmbededVideo/CustomAiModel/RawData/images1s"
-	output_folder = "EmbededVideo/CustomAiModel/PreProcess/test_1"
+	output_folder = "EmbededVideo/CustomAiModel/PreProcess/mini_batch"
 	process_all_image(input_folder, output_folder)
 
 	
