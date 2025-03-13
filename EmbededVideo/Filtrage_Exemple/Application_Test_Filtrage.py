@@ -9,8 +9,14 @@ HEIGHT = 480
 
 def hsv_to_rgb(h, s, v):
     """
-    Convert HSV to an RGB tuple (0..255 each).
+    Convertit une couleur HSV en un tuple RGB (0..255 chacun).
+
+    :param h: Teinte (généralement 0..179 pour OpenCV)
+    :param s: Saturation (0..255)
+    :param v: Valeur/Luminosité (0..255)
+    :return: Un tuple (r, g, b) avec chaque composante dans [0..255]
     """
+    # Cette fonction effectue la conversion en se basant sur la décomposition de HSV
     h = float(h)
     s = float(s) / 255.0
     v = float(v) / 255.0
@@ -36,25 +42,35 @@ def hsv_to_rgb(h, s, v):
 
 def rgb_to_hsv(r, g, b):
     """
-    Convert RGB (0..255 each) to HSV (H:0..179, S:0..255, V:0..255) for OpenCV.
+    Convertit une couleur RGB en HSV, au format attendu par OpenCV (H:0..179, S:0..255, V:0..255).
+
+    :param r: Composante rouge (0..255)
+    :param g: Composante verte (0..255)
+    :param b: Composante bleue (0..255)
+    :return: Un tuple (h, s, v) correspondant à la teinte, saturation et valeur
     """
-    bgr = np.uint8([[[b, g, r]]])  # Convert RGB -> BGR for OpenCV
+    # On convertit d'abord le format RGB en BGR pour OpenCV
+    bgr = np.uint8([[[b, g, r]]])
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     h, s, v = hsv[0][0]
     return int(h), int(s), int(v)
 
 def pick_color_for_filter(is_lower, filter_number):
     """
-    Opens a color chooser, converts selected RGB to HSV,
-    and sets the corresponding entries (lower or upper) for the specified filter.
+    Ouvre une boîte de dialogue pour choisir une couleur en RGB, la convertit en HSV,
+    puis l'assigne aux champs (lower ou upper) du filtre correspondant.
+
+    :param is_lower: Booléen indiquant si l'on met à jour les valeurs "basses" (lower) ou "hautes" (upper)
+    :param filter_number: Numéro du filtre (1 ou 2) pour lequel on met à jour les valeurs
     """
     chosen_color = colorchooser.askcolor(title="Choose a color")
     if chosen_color[0] is None:
-        return  # User canceled or closed the dialog
-    r, g, b = [int(x) for x in chosen_color[0]]  # chosen_color[0] = (r, g, b)
+        return  # L'utilisateur a annulé ou fermé la fenêtre
+    r, g, b = [int(x) for x in chosen_color[0]]
 
     h, s, v = rgb_to_hsv(r, g, b)
 
+    # Mise à jour des champs de saisie selon le filtre et la plage (lower/upper)
     if filter_number == 1 and is_lower:
         hue_low1.delete(0, tk.END)
         hue_low1.insert(0, str(h))
@@ -88,16 +104,16 @@ def pick_color_for_filter(is_lower, filter_number):
 
 def update_image():
     """
-    Reads the current HSV bounds from the entry boxes,
-    applies them to the currently shown image, and displays the results.
-    Also updates the color-preview rectangles in the GUI.
+    Lit les valeurs HSV dans les champs de saisie, applique les filtres à l'image courante
+    et affiche le résultat dans des fenêtres OpenCV redimensionnables.
+    Met également à jour les rectangles de prévisualisation de couleur dans l'interface.
     """
     if not image_files:
         return
     global frame
 
     try:
-        # Grab HSV bounds for Filter 1
+        # Récupération des bornes HSV pour le Filtre 1
         lower_h1 = int(hue_low1.get())
         lower_s1 = int(sat_low1.get())
         lower_v1 = int(val_low1.get())
@@ -105,7 +121,7 @@ def update_image():
         upper_s1 = int(sat_high1.get())
         upper_v1 = int(val_high1.get())
 
-        # Grab HSV bounds for Filter 2
+        # Récupération des bornes HSV pour le Filtre 2
         lower_h2 = int(hue_low2.get())
         lower_s2 = int(sat_low2.get())
         lower_v2 = int(val_low2.get())
@@ -113,22 +129,22 @@ def update_image():
         upper_s2 = int(sat_high2.get())
         upper_v2 = int(val_high2.get())
 
-        # Convert the current frame to HSV
+        # Conversion de l'image courante en HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Create thresholds
+        # Création des seuils pour chaque filtre
         lower_color1 = np.array([lower_h1, lower_s1, lower_v1])
         upper_color1 = np.array([upper_h1, upper_s1, upper_v1])
         lower_color2 = np.array([lower_h2, lower_s2, lower_v2])
         upper_color2 = np.array([upper_h2, upper_s2, upper_v2])
 
-        # Create masks & filtered images
+        # Création des masques et des images filtrées
         mask1 = cv2.inRange(hsv, lower_color1, upper_color1)
         mask2 = cv2.inRange(hsv, lower_color2, upper_color2)
         res1 = cv2.bitwise_and(frame, frame, mask=mask1)
         res2 = cv2.bitwise_and(frame, frame, mask=mask2)
 
-        # Display the images in resizable windows
+        # Affichage de l'image originale et des images filtrées dans des fenêtres redimensionnables
         cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('Original', WEIGHT, HEIGHT)
         cv2.imshow('Original', frame)
@@ -141,7 +157,7 @@ def update_image():
         cv2.resizeWindow('Filtered 2', WEIGHT, HEIGHT)
         cv2.imshow('Filtered 2', res2)
 
-        # Update color-preview rectangles in the GUI
+        # Mise à jour des carrés de prévisualisation (couleurs "lower" et "upper")
         lower_rgb1 = hsv_to_rgb(lower_h1, lower_s1, lower_v1)
         upper_rgb1 = hsv_to_rgb(upper_h1, upper_s1, upper_v1)
         lower_rgb2 = hsv_to_rgb(lower_h2, lower_s2, lower_v2)
@@ -152,12 +168,15 @@ def update_image():
         canvas2_lower.create_rectangle(0, 0, 50, 50, fill='#%02x%02x%02x' % lower_rgb2, outline="")
         canvas2_upper.create_rectangle(0, 0, 50, 50, fill='#%02x%02x%02x' % upper_rgb2, outline="")
     except ValueError:
-        pass  # Ignore invalid integer inputs in the Entry boxes
+        # On ignore les cas où les valeurs ne sont pas des entiers valides
+        pass
 
 def load_image(index):
     """
-    Load the image at the given index from image_files into `frame`.
-    Then update the displayed result.
+    Charge l'image à l'index spécifié dans la variable globale 'frame'
+    puis met à jour l'affichage.
+
+    :param index: Index de l'image à charger
     """
     global frame, current_index
     if not image_files:
@@ -169,29 +188,29 @@ def load_image(index):
 
 def prev_image():
     """
-    Go to the previous image in the list.
+    Passe à l'image précédente dans la liste.
     """
     load_image(current_index - 1)
 
 def next_image():
     """
-    Go to the next image in the list.
+    Passe à l'image suivante dans la liste.
     """
     load_image(current_index + 1)
 
-# ---------- MAIN SCRIPT ----------
+# ---------- Début du script principal ----------
 
 root = tk.Tk()
 root.title("HSV Color Filter")
 
-# Ask the user to pick a folder of images
+# Invite l'utilisateur à sélectionner un dossier contenant des images
 image_folder = filedialog.askdirectory(title="Select a folder containing images")
 if not image_folder:
-    print("No folder selected. Exiting.")
+    print("Aucun dossier sélectionné. Fermeture du programme.")
     root.destroy()
     exit()
 
-# Gather images (customize extensions if needed)
+# Récupère la liste des fichiers image (personnaliser l'extension si nécessaire)
 image_files = [
     f for f in os.listdir(image_folder)
     if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))
@@ -199,14 +218,14 @@ image_files = [
 image_files.sort()
 
 if not image_files:
-    print("No images found in the selected folder.")
+    print("Aucune image trouvée dans le dossier sélectionné.")
     root.destroy()
     exit()
 
 current_index = 0
 frame = None
 
-# --- Filter 1 ---
+# --- Filtre 1 ---
 tk.Label(root, text="Filter 1").grid(row=0, column=0, columnspan=3)
 
 tk.Label(root, text="Hue Low").grid(row=1, column=0)
@@ -251,7 +270,7 @@ val_high1 = tk.Entry(root)
 val_high1.insert(0, "255")
 val_high1.grid(row=6, column=1)
 
-# --- Filter 2 ---
+# --- Filtre 2 ---
 tk.Label(root, text="Filter 2").grid(row=7, column=0, columnspan=3)
 
 tk.Label(root, text="Hue Low").grid(row=8, column=0)
@@ -296,21 +315,21 @@ val_high2 = tk.Entry(root)
 val_high2.insert(0, "255")
 val_high2.grid(row=13, column=1)
 
-# Navigation buttons
+# Boutons de navigation
 btn_prev = tk.Button(root, text="<< Previous", command=prev_image)
 btn_prev.grid(row=14, column=0)
 btn_next = tk.Button(root, text="Next >>", command=next_image)
 btn_next.grid(row=14, column=1)
 
-# Update button (re-applies filter if desired)
+# Bouton de mise à jour (appliquer le filtre à nouveau)
 btn_update = tk.Button(root, text="Apply Filter", command=update_image)
 btn_update.grid(row=14, column=2)
 
-# Load the first image
+# Charge la première image
 load_image(0)
 
-# Start the Tkinter loop
+# Démarre la boucle principale de Tkinter
 root.mainloop()
 
-# Release windows when done
+# Ferme les fenêtres OpenCV une fois terminé
 cv2.destroyAllWindows()

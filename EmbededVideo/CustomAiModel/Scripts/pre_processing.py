@@ -1,25 +1,29 @@
 import os
 import cv2
 import numpy as np
-
 from charging_bar import ChargingBar
-        
-# FILTER PARAMS
+
+# Paramètres du filtre pour la détection de la couleur rouge
 M1_LOWER_RED = np.array([130, 35, 200])
-M1_UPPER_RED = np.array([180, 255, 255])        
+M1_UPPER_RED = np.array([180, 255, 255])
 M2_LOWER_RED = np.array([130, 35, 200])
 M2_UPPER_RED = np.array([180, 255, 255])
 
+# Dossiers d'entrée et de sortie
 input_folder = "EmbededVideo/CustomAiModel/RawData/images1s"
-# input_folder = "EmbededVideo/CustomAiModel/RawData/mini_batch"
 output_folder = "EmbededVideo/CustomAiModel/PreProcess/filtered_images"
 
-
-
 def process_all_image(input_folder, output_folder):
+    """
+    Traite toutes les images d'un dossier en les filtrant et en les classant
+    en fonction de la présence de rouge.
+
+    :param input_folder: Chemin du dossier contenant les images à traiter
+    :param output_folder: Chemin du dossier où enregistrer les images filtrées
+    """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-        
+    
     bar = ChargingBar(len(os.listdir(input_folder)))
     bar.show()
     
@@ -29,13 +33,18 @@ def process_all_image(input_folder, output_folder):
             process_image(image_path, output_folder)
             bar.update()
 
-
-
 def process_image(image_path, output_folder):
+    """
+    Charge, filtre et enregistre une image dans le bon dossier selon
+    la présence de la couleur rouge.
+    
+    :param image_path: Chemin de l'image à traiter
+    :param output_folder: Dossier où stocker l'image filtrée
+    """
     # Charger l'image
     image = cv2.imread(image_path)
 
-    # Vérifier si l'image est chargée correctement
+    # Vérifier si l'image est correctement chargée
     if image is None:
         print(f"Erreur : impossible de charger l'image {image_path}")
         return
@@ -43,67 +52,48 @@ def process_image(image_path, output_folder):
     # Appliquer le filtre
     image = filter(image)
     
+    # Vérifier la présence de rouge et trier l'image
     if detect_red(image):
-        # Ajouter un tag au nom de l'image 'r_' au début
         red_output_folder = os.path.join(output_folder, "red")
-        if not os.path.exists(red_output_folder):
-            os.makedirs(red_output_folder)
-        image_name = os.path.basename(image_path)
-        image_name = f"r_{image_name}"
+        os.makedirs(red_output_folder, exist_ok=True)
+        image_name = f"r_{os.path.basename(image_path)}"
         output_path = os.path.join(red_output_folder, image_name)
     else:
         non_red_output_folder = os.path.join(output_folder, "non_red")
-        if not os.path.exists(non_red_output_folder):
-            os.makedirs(non_red_output_folder)
+        os.makedirs(non_red_output_folder, exist_ok=True)
         output_path = os.path.join(non_red_output_folder, os.path.basename(image_path))
     
     # Sauvegarde de l'image traitée
     cv2.imwrite(output_path, image)
 
-
-
 def filter(image):
-    # Redimensionnement en 1280x1280 (avec padding si nécessaire pour conserver le ratio)
+    """
+    Applique un redimensionnement et un filtre détectant la couleur rouge.
+    
+    :param image: Image originale à traiter
+    :return: Image filtrée
+    """
     image = cv2.resize(image, (1280, 1280), interpolation=cv2.INTER_CUBIC) 
-    
-    # Ajouter un filtrage sur l'image pour détecter le rouge
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    
     mask1 = cv2.inRange(hsv, M1_LOWER_RED, M1_UPPER_RED)
     mask2 = cv2.inRange(hsv, M2_LOWER_RED, M2_UPPER_RED)
     mask = mask1 + mask2
-    
-    # Produire l'image filtrée
     res = cv2.bitwise_and(image, image, mask=mask)
-    
-    # Produit enntre le résultat et l'image originale
-    res = cv2.addWeighted(image, 0.5, res, 0.5, 0)
-    
-    return res
-
-
+    return cv2.addWeighted(image, 0.5, res, 0.5, 0)
 
 def detect_red(image):
-    # Convert to HSV
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    """
+    Détecte si une image contient une quantité significative de rouge.
     
+    :param image: Image à analyser
+    :return: Booléen indiquant la présence de rouge
+    """
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     mask1 = cv2.inRange(hsv, M1_LOWER_RED, M1_UPPER_RED)
     mask2 = cv2.inRange(hsv, M2_LOWER_RED, M2_UPPER_RED)
     mask = mask1 + mask2
-    
-    # Count the number of non-zero (red) pixels
     red_pixels = cv2.countNonZero(mask)
+    return red_pixels > 400
 
-    # You can set the threshold based on experimentation or your needs:
-    # Here we use a simple fixed threshold of 3,000 pixels.
-    # Alternatively, you could use a ratio (e.g. ratio = red_pixels / mask.size)
-    # and compare it to a fraction to detect how much red is in the image.
-    threshold = 400
-    return red_pixels > threshold
-
-    
- 
 if __name__ == '__main__':
     process_all_image(input_folder, output_folder)
-
-    
