@@ -3,7 +3,6 @@ import sys
 
 def open_labelimg():
     try:
-        # Essayer d'exécuter LabelImg
         subprocess.run(["labelImg"], check=True)
     except FileNotFoundError:
         print("❌ LabelImg n'est pas installé. Installation en cours...")
