@@ -1,6 +1,20 @@
-# Web
-Web
+# Ignore build files
 .__pycache__
+
+# Ignore raw data and preprocessed data
 /EmbededVideo/CustomAiModel/labelImg
 /EmbededVideo/CustomAiModel/RawData
 /EmbededVideo/CustomAiModel/PreProcess
+/EmbededVideo/CustomAiModel/dataset
+
+# Ignore all .pt files except for the ones we want to keep
+yolov8n.pt
+yolo11n.pt
+
+# Keep only the training weights and logs for the detection runs
+/runs/*
+!/runs/detect/
+/runs/detect/*
+!/runs/detect/train/
+/runs/detect/train/*
+!/runs/detect/train/weights/
