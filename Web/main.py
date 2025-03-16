@@ -1,6 +1,8 @@
 from flask import Flask, render_template, jsonify, Response
 import cv2
 import threading
+import numpy as np
+import time
 
 ################################
 
@@ -18,6 +20,8 @@ class Video(threading.Thread):
         self.cap = cv2.VideoCapture(cam_index)
         self.running = self.cap.isOpened()  # vérifie si la caméra est ouverte
         self.frame = None
+        self.detected = False
+        self.min_area = 500  # aire minimale pour la détection de contours
 
     def stop(self):
         self.running = False
@@ -34,6 +38,35 @@ class Video(threading.Thread):
             if success:
                 return buffer.tobytes()
         return None
+    
+    def detect(self):
+        hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        
+        lower_red = np.array([0, 100, 70])
+        upper_red = np.array([10, 255, 255])
+        mask1 = cv2.inRange(hsv, lower_red, upper_red)
+        
+        lower_red = np.array([170, 110, 70])
+        upper_red = np.array([180, 255, 255])
+        mask2 = cv2.inRange(hsv, lower_red, upper_red)
+        
+        mask = mask1 + mask2
+        res = cv2.bitwise_and(self.frame, self.frame, mask=mask)
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        valid_contours = [contour for contour in contours if cv2.contourArea(contour) >= self.min_area]
+        
+        if valid_contours:
+            if not self.detected:
+                self.detection_start_time = time.time()  # start timer
+                self.detected = True
+            else:
+                if time.time() - self.detection_start_time >= 0.5:
+                    for contour in valid_contours:
+                        x, y, w, h = cv2.boundingRect(contour)
+                        cv2.rectangle(self.frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
+                    print("Tache rouge détectée pendant 1 seconde")
+        else:
+            self.detected = False
 
 def loop_video():
     video_thread = Video()
@@ -41,6 +74,7 @@ def loop_video():
     
     while video_thread.running:
         video_thread.update_frame()
+        video_thread.detect()
         frame = video_thread.get_jpg()
         if frame is None:
             continue
@@ -109,9 +143,4 @@ def right_change_view():
     return jsonify(success=True, action="right_change_view")
 
 if __name__ == '__main__':
-    # Démarrage du thread de capture vidéo
-    # t = threading.Thread(target=video_capture)
-    # t.daemon = True
-    # t.start()
-    # Lancement de l'application Flask
     app.run(debug=True, threaded=True)
