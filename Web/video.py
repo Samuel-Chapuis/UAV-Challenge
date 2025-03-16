@@ -67,7 +67,7 @@ class Video(threading.Thread):
                     for contour in valid_contours:
                         x, y, w, h = cv2.boundingRect(contour)
                         cv2.rectangle(self.frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
-                    print("Tache rouge détectée pendant 1 seconde")
+                    # print("Tache rouge détectée pendant 1 seconde")
         else:
             self.detected = False
 
