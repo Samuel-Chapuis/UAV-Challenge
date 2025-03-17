@@ -10,7 +10,7 @@ from flask import Flask, render_template, jsonify, Response
 
 # Imports locaux
 from video import loop_video
-from globalVar import mother_drone
+from globalVar import mother_drone, second_drone
 # -------------------------------- #
 
 app = Flask(__name__)
@@ -27,56 +27,55 @@ def video_feed():
 
 @app.route('/gps')
 def gps():
-    # On obtient des coordonnées simulées
-    latitude, longitude = mother_drone.listen_gps()
-    return jsonify(latitude=latitude, longitude=longitude)
+    # Obtention des coordonnées simulées pour les 2 drones
+    lat1, lon1 = mother_drone.listen_gps()
+    lat2, lon2 = second_drone.listen_gps()
+    return jsonify(
+        drone1={'latitude': lat1, 'longitude': lon1},
+        drone2={'latitude': lat2, 'longitude': lon2}
+    )
 
 # Fonctions associées aux boutons du panneau gauche
 @app.route('/start')
 def start():
     print("Fonction Start déclenchée")
-    # Insérez ici votre code pour démarrer le drone
     return jsonify(success=True, action="start")
 
 @app.route('/stop')
 def stop():
     print("Fonction Stop déclenchée")
-    # Insérez ici votre code pour arrêter le drone
     return jsonify(success=True, action="stop")
 
 @app.route('/left_change_view')
 def left_change_view():
     print("Changement de vue (panneau gauche) déclenché")
-    # Insérez ici votre code pour changer la vue du panneau gauche
     return jsonify(success=True, action="left_change_view")
 
 @app.route('/screenshot')
 def screenshot():
     print("Capture d'écran déclenchée")
-    # Insérez ici votre code pour réaliser une capture d'écran
     return jsonify(success=True, action="screenshot")
 
 @app.route('/reload')
 def reload_():
     print("Recharge déclenchée")
-    # Insérez ici votre code pour recharger l'affichage ou réinitialiser
     return jsonify(success=True, action="reload")
 
 # Fonctions associées aux boutons du panneau droit
 @app.route('/add_waypoint')
 def add_waypoint():
     print("Ajout de waypoint déclenché")
-    # Insérez ici votre code pour ajouter un waypoint
     return jsonify(success=True, action="add_waypoint")
 
 @app.route('/export_pos')
 def export_pos():
     print("Export des positions déclenché")
-    # Insérez ici votre code pour exporter les positions
     return jsonify(success=True, action="export_pos")
 
 @app.route('/right_change_view')
 def right_change_view():
     print("Changement de vue (panneau droit) déclenché")
-    # Insérez ici votre code pour changer la vue du panneau droit
     return jsonify(success=True, action="right_change_view")
+
+if __name__ == '__main__':
+    app.run(debug=True, threaded=True)

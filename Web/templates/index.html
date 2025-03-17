@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interface Drone - Contrôle</title>
-  <!-- Inclusion de Leaflet CSS pour la carte dans le panneau droit -->
+  <!-- Inclusion de Leaflet CSS pour la carte -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     /* Réinitialisation et configuration de base */
@@ -73,9 +73,6 @@
       object-fit: cover;
       transition: object-fit 0.3s ease;
     }
-	.image-container.full-view img {
-		object-fit: contain;
-	  }
     /* Panneau droit (carte) */
     .panel.right {
       flex-direction: row;
@@ -139,6 +136,10 @@
       width: 100%;
       height: 100%;
     }
+
+	.transparent-icon img {
+		background: transparent; /* Ensure the background is transparent */
+	}
   </style>
 </head>
 <body>
@@ -165,10 +166,10 @@
           <img src="{{ url_for('static', filename='images/stop.png') }}" alt="Stop">
           <span>Stop</span>
         </button>
-		<button onclick="ExpandView()">
-			<img src="{{ url_for('static', filename='images/expand.png') }}" alt="Expand View">
-			<span>Expand View</span>
-		</button>
+        <button onclick="triggerAction('/left_change_view')">
+          <img src="{{ url_for('static', filename='images/change.png') }}" alt="Change View">
+          <span>Change View</span>
+        </button>
         <button onclick="triggerAction('/screenshot')">
           <img src="{{ url_for('static', filename='images/screenshot.png') }}" alt="Screenshot">
           <span>Screenshot</span>
@@ -179,7 +180,7 @@
         </button>
       </div>
     </div>
-    <!-- Panneau droit : carte -->
+    <!-- Panneau droit : carte affichant les 2 drones -->
     <div class="panel right">
       <div class="image-container" id="mapContainer">
         <div id="map"></div>
@@ -193,7 +194,8 @@
           <img src="{{ url_for('static', filename='images/export.png') }}" alt="Export Pos">
           <span>Export Pos</span>
         </button>
-        <button onclick="triggerAction('/right_change_view')">
+        <!-- Bouton modifié pour basculer la vue satellite -->
+        <button onclick="toggleMapView()">
           <img src="{{ url_for('static', filename='images/change.png') }}" alt="Change View">
           <span>Change View</span>
         </button>
@@ -203,34 +205,11 @@
 
   <!-- Inclusion de Leaflet JS pour la carte -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Script pour gérer les requêtes AJAX, la carte et le pop-up -->
+  <!-- Script pour gérer les requêtes AJAX, la carte, et le changement de vue -->
   <script>
-	function triggerAction(endpoint) {
-		fetch(endpoint)
-		  .then(response => response.json())
-		  .then(data => {
-			console.log("Action:", data.action, "réussie !");
-		  })
-		  .catch(error => {
-			console.error("Erreur lors de l'action", endpoint, error);
-		  });
-	  }
-  
-	  function ExpandView() {
-		const container = document.getElementById('leftContainer');
-		container.classList.toggle('full-view');
-	  }
-
-
+    // Fonction d'action des boutons pour les endpoints non modifiés
     function triggerAction(endpoint) {
-      // Liste des endpoints pour lesquels la fonction n'est pas encore disponible
-      const notAvailableEndpoints = ['/export_pos', '/right_change_view'];
-      
-      if (notAvailableEndpoints.includes(endpoint)) {
-        alert("Cette fonction n'est pas encore disponible");
-        return;
-      }
-      
+      // Vous pouvez ajouter ici une liste d'endpoints non disponibles si nécessaire
       fetch(endpoint)
         .then(response => response.json())
         .then(data => {
@@ -240,31 +219,94 @@
           console.error("Erreur lors de l'action", endpoint, error);
         });
     }
-
+    
     // Initialisation de la carte avec une position par défaut
     var defaultLat = 48.8566, defaultLon = 2.3522; // Exemple : Paris
     var map = L.map('map').setView([defaultLat, defaultLon], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    
+    // Couche de tuiles OSM (vue normale)
+    var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    var marker = L.marker([defaultLat, defaultLon]).addTo(map);
+    });
+    osmLayer.addTo(map);
+    
+    // Couche de tuiles satellite (vue satellite via Esri World Imagery)
+    var satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    });
+    
+    // Variable pour suivre l'état de la vue
+    var isSatellite = false;
+    
+    // Fonction pour basculer la vue de la carte
+    function toggleMapView() {
+      if (isSatellite) {
+        map.removeLayer(satLayer);
+        osmLayer.addTo(map);
+        isSatellite = false;
+      } else {
+        map.removeLayer(osmLayer);
+        satLayer.addTo(map);
+        isSatellite = true;
+      }
+    }
 
-    // Fonction pour actualiser la position GPS
+    // Icône pour le premier drone (bleu, icône par défaut Leaflet)
+	var main_plane_icon = L.icon({
+		iconUrl: '{{ url_for("static", filename="images/plane_w.png") }}',
+		iconSize: [40, 40],
+		iconAnchor: [20, 20],
+		popupAnchor: [0, -20]
+	});
+    
+    // Pour le second drone, nous utilisons un marqueur avec un DivIcon qui affiche une image
+	var second_plane_icon = L.icon({
+		iconUrl: '{{ url_for("static", filename="images/planer_w.png") }}',
+		iconSize: [40, 40],
+		iconAnchor: [20, 20],
+		popupAnchor: [0, -20]
+	});
+    
+    // Création des marqueurs pour les 2 drones
+    var marker1 = L.marker([defaultLat, defaultLon], {icon: main_plane_icon}).addTo(map);
+    var marker2 = L.marker([defaultLat, defaultLon], {icon: second_plane_icon}).addTo(map);
+    
+    // Initialisation des tableaux de positions pour tracer la trajectoire
+    var drone1Path = [];
+    var drone2Path = [];
+    
+    // Création des polylignes pour tracer la trajectoire des 2 drones
+    var polyline1 = L.polyline([], {color: 'blue'}).addTo(map);
+    var polyline2 = L.polyline([], {color: 'red'}).addTo(map);
+    
+    // Fonction pour actualiser la position GPS des deux drones
     function updateGPS() {
       fetch('/gps')
         .then(response => response.json())
         .then(data => {
-          var lat = data.latitude;
-          var lon = data.longitude;
-          marker.setLatLng([lat, lon]);
-          map.setView([lat, lon]);
-          console.log("GPS mis à jour :", lat, lon);
+          var d1 = data.drone1;
+          var d2 = data.drone2;
+          var latLng1 = [d1.latitude, d1.longitude];
+          var latLng2 = [d2.latitude, d2.longitude];
+          // Mettre à jour la position des marqueurs
+          marker1.setLatLng(latLng1);
+          marker2.setLatLng(latLng2);
+          // Ajouter la nouvelle position aux trajectoires
+          drone1Path.push(latLng1);
+          drone2Path.push(latLng2);
+          // Mettre à jour les polylignes
+          polyline1.setLatLngs(drone1Path);
+          polyline2.setLatLngs(drone2Path);
+          // Ajuster la vue pour inclure les deux marqueurs et leurs trajectoires
+          var group = new L.featureGroup([marker1, marker2, polyline1, polyline2]);
+          map.fitBounds(group.getBounds(), { padding: [50, 50] });
+          console.log("GPS mis à jour :", d1.latitude, d1.longitude, "|", d2.latitude, d2.longitude);
         })
         .catch(error => console.error('Erreur lors de la récupération du GPS :', error));
     }
-
+    
     // Actualiser la position toutes les 5 secondes
-    setInterval(updateGPS, 500);
+    setInterval(updateGPS, 5000);
   </script>
 </body>
 </html>
