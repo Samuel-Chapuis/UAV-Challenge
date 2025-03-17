@@ -65,6 +65,7 @@ def predict(image, model):
     """
     # Exécuter l'inférence
     results = model.predict(source=image, conf=0.25, verbose=False)
+    beacons = 0
     detections = results[0]
     annotated_frame = image.copy()
     for box in detections.boxes:
@@ -76,7 +77,10 @@ def predict(image, model):
         label = f"{class_name} {conf:.2f}"
         cv2.putText(annotated_frame, label, (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    return annotated_frame
+    
+    beacons = len(detections.boxes)  # Compter le nombre de détections (beacons)
+    
+    return annotated_frame, beacons  # Retourner aussi l'état du beacon (détection d'objet)
 
 # -------------------------------------------------------
 

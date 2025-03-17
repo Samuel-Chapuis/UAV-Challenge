@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interface Drone - Contrôle</title>
+  <!-- Inclusion de Leaflet CSS pour la carte -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     /* Réinitialisation et configuration de base */
     body, html {
@@ -33,10 +35,10 @@
     .top-bar button:hover {
       background-color: #777;
     }
-    /* Conteneur principal pour les panneaux d'images */
+    /* Conteneur principal pour les panneaux */
     .container {
       display: flex;
-      height: calc(100vh - 60px); /* Hauteur restante après la barre supérieure */
+      height: calc(100vh - 60px);
     }
     /* Styles généraux pour chaque panneau */
     .panel {
@@ -46,29 +48,41 @@
       overflow: hidden;
       position: relative;
     }
-    /* Conteneur de l'image */
+    /* Panneau gauche (flux vidéo) */
+    .panel.left {
+      flex-direction: row;
+    }
+    .panel.left .image-container {
+      order: 1;
+    }
+    .panel.left .vertical-bar {
+      order: 2;
+    }
     .image-container {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #ddd; /* Remplissage temporaire */
-      font-size: 1.2em;
-      font-weight: bold;
+      background-color: #ddd;
       position: relative;
       transition: all 0.3s ease;
     }
-    /* Par défaut, l'image occupe toute la zone avec un objet en "cover" (coupé) */
     .image-container img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transition: object-fit 0.3s ease;
     }
-    /* En mode "full-view", l'image est entièrement visible grâce à object-fit: contain.
-       On supprime la réduction de taille pour maximiser l'affichage. */
-    .image-container.full-view img {
-      object-fit: contain;
+    /* Panneau droit (carte) */
+    .panel.right {
+      flex-direction: row;
+    }
+    .panel.right .image-container {
+      order: 1;
+      flex: 1;
+    }
+    .panel.right .vertical-bar {
+      order: 2;
     }
     /* Barre verticale des boutons */
     .vertical-bar {
@@ -81,11 +95,9 @@
       align-items: flex-start;
       overflow: hidden;
     }
-    /* Expansion de la barre lors du survol du panneau */
     .panel:hover .vertical-bar {
       width: 150px;
     }
-    /* Boutons de la barre verticale */
     .vertical-bar button {
       display: flex;
       align-items: center;
@@ -103,13 +115,11 @@
       background-color: rgba(255, 255, 255, 1);
       transform: scale(1.05);
     }
-    /* Images dans les boutons */
     .vertical-bar button img {
       width: 30px;
       height: auto;
       display: block;
     }
-    /* Texte des boutons caché par défaut */
     .vertical-bar button span {
       margin-left: 8px;
       white-space: nowrap;
@@ -118,48 +128,34 @@
       font-size: 14px;
       color: #333;
     }
-    /* Affichage progressif du texte quand le panneau est survolé */
     .panel:hover .vertical-bar button span {
       opacity: 1;
     }
-    /* Positionnement des barres selon le panneau */
-    /* Panneau gauche : image puis barre (la barre se trouve à droite de l'image) */
-    .panel.left {
-      flex-direction: row;
+    /* Définition du conteneur pour la carte dans le panneau droit */
+    #map {
+      width: 100%;
+      height: 100%;
     }
-    .panel.left .image-container {
-      order: 1;
-    }
-    .panel.left .vertical-bar {
-      order: 2;
-    }
-    /* Panneau droit : image puis barre (la barre se trouve à droite de l'écran) */
-    .panel.right {
-      flex-direction: row;
-    }
-    .panel.right .image-container {
-      order: 1;
-      flex: 1;
-    }
-    .panel.right .vertical-bar {
-      order: 2;
-    }
+
+	.transparent-icon img {
+		background: transparent; /* Ensure the background is transparent */
+	}
   </style>
 </head>
 <body>
   <!-- Barre de boutons en haut -->
   <div class="top-bar">
-    <button onclick="">Action 1</button>
-    <button onclick="">Action 2</button>
-    <button onclick="">Action 3</button>
+    <button onclick="triggerAction('/start')">Action 1</button>
+    <button onclick="triggerAction('/stop')">Action 2</button>
+    <button onclick="triggerAction('/left_change_view')">Action 3</button>
   </div>
 
-  <!-- Conteneur principal pour les images et barres verticales -->
+  <!-- Conteneur principal pour les panneaux -->
   <div class="container">
-    <!-- Panneau gauche -->
+    <!-- Panneau gauche : flux vidéo -->
     <div class="panel left">
       <div class="image-container" id="leftContainer">
-        <img src="/video_feed" alt="Left Feed">
+        <img src="/video_feed" alt="Flux vidéo">
       </div>
       <div class="vertical-bar">
         <button onclick="triggerAction('/start')">
@@ -170,9 +166,9 @@
           <img src="{{ url_for('static', filename='images/stop.png') }}" alt="Stop">
           <span>Stop</span>
         </button>
-        <button onclick="expandView()">
-          <img src="{{ url_for('static', filename='images/expand.png') }}" alt="Expand View">
-          <span>Expand View</span>
+        <button onclick="triggerAction('/left_change_view')">
+          <img src="{{ url_for('static', filename='images/change.png') }}" alt="Change View">
+          <span>Change View</span>
         </button>
         <button onclick="triggerAction('/screenshot')">
           <img src="{{ url_for('static', filename='images/screenshot.png') }}" alt="Screenshot">
@@ -184,10 +180,10 @@
         </button>
       </div>
     </div>
-    <!-- Panneau droit -->
+    <!-- Panneau droit : carte affichant les 2 drones -->
     <div class="panel right">
-      <div class="image-container">
-        Image Droite
+      <div class="image-container" id="mapContainer">
+        <div id="map"></div>
       </div>
       <div class="vertical-bar">
         <button onclick="triggerAction('/add_waypoint')">
@@ -198,7 +194,8 @@
           <img src="{{ url_for('static', filename='images/export.png') }}" alt="Export Pos">
           <span>Export Pos</span>
         </button>
-        <button onclick="triggerAction('/right_change_view')">
+        <!-- Bouton modifié pour basculer la vue satellite -->
+        <button onclick="toggleMapView()">
           <img src="{{ url_for('static', filename='images/change.png') }}" alt="Change View">
           <span>Change View</span>
         </button>
@@ -206,9 +203,13 @@
     </div>
   </div>
 
-  <!-- Script pour envoyer les requêtes AJAX et basculer la vue -->
+  <!-- Inclusion de Leaflet JS pour la carte -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Script pour gérer les requêtes AJAX, la carte, et le changement de vue -->
   <script>
+    // Fonction d'action des boutons pour les endpoints non modifiés
     function triggerAction(endpoint) {
+      // Vous pouvez ajouter ici une liste d'endpoints non disponibles si nécessaire
       fetch(endpoint)
         .then(response => response.json())
         .then(data => {
@@ -218,13 +219,94 @@
           console.error("Erreur lors de l'action", endpoint, error);
         });
     }
-
-    function expandView() {
-      const container = document.getElementById('leftContainer');
-      container.classList.toggle('full-view');
-      // Optionnel : Vous pouvez aussi envoyer une requête au serveur si besoin
-      // triggerAction('/left_change_view');
+    
+    // Initialisation de la carte avec une position par défaut
+    var defaultLat = 48.8566, defaultLon = 2.3522; // Exemple : Paris
+    var map = L.map('map').setView([defaultLat, defaultLon], 13);
+    
+    // Couche de tuiles OSM (vue normale)
+    var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    });
+    osmLayer.addTo(map);
+    
+    // Couche de tuiles satellite (vue satellite via Esri World Imagery)
+    var satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    });
+    
+    // Variable pour suivre l'état de la vue
+    var isSatellite = false;
+    
+    // Fonction pour basculer la vue de la carte
+    function toggleMapView() {
+      if (isSatellite) {
+        map.removeLayer(satLayer);
+        osmLayer.addTo(map);
+        isSatellite = false;
+      } else {
+        map.removeLayer(osmLayer);
+        satLayer.addTo(map);
+        isSatellite = true;
+      }
     }
+
+    // Icône pour le premier drone (bleu, icône par défaut Leaflet)
+	var main_plane_icon = L.icon({
+		iconUrl: '{{ url_for("static", filename="images/plane_w.png") }}',
+		iconSize: [40, 40],
+		iconAnchor: [20, 20],
+		popupAnchor: [0, -20]
+	});
+    
+    // Pour le second drone, nous utilisons un marqueur avec un DivIcon qui affiche une image
+	var second_plane_icon = L.icon({
+		iconUrl: '{{ url_for("static", filename="images/planer_w.png") }}',
+		iconSize: [40, 40],
+		iconAnchor: [20, 20],
+		popupAnchor: [0, -20]
+	});
+    
+    // Création des marqueurs pour les 2 drones
+    var marker1 = L.marker([defaultLat, defaultLon], {icon: main_plane_icon}).addTo(map);
+    var marker2 = L.marker([defaultLat, defaultLon], {icon: second_plane_icon}).addTo(map);
+    
+    // Initialisation des tableaux de positions pour tracer la trajectoire
+    var drone1Path = [];
+    var drone2Path = [];
+    
+    // Création des polylignes pour tracer la trajectoire des 2 drones
+    var polyline1 = L.polyline([], {color: 'yellow', opacity: 0.75}).addTo(map);
+    var polyline2 = L.polyline([], {color: 'red', opacity: 0.75}).addTo(map);
+    
+    // Fonction pour actualiser la position GPS des deux drones
+    function updateGPS() {
+      fetch('/gps')
+        .then(response => response.json())
+        .then(data => {
+          var d1 = data.drone1;
+          var d2 = data.drone2;
+          var latLng1 = [d1.latitude, d1.longitude];
+          var latLng2 = [d2.latitude, d2.longitude];
+          // Mettre à jour la position des marqueurs
+          marker1.setLatLng(latLng1);
+          marker2.setLatLng(latLng2);
+          // Ajouter la nouvelle position aux trajectoires
+          drone1Path.push(latLng1);
+          drone2Path.push(latLng2);
+          // Mettre à jour les polylignes
+          polyline1.setLatLngs(drone1Path);
+          polyline2.setLatLngs(drone2Path);
+          // Ajuster la vue pour inclure les deux marqueurs et leurs trajectoires
+          var group = new L.featureGroup([marker1, marker2, polyline1, polyline2]);
+          map.fitBounds(group.getBounds(), { padding: [50, 50] });
+          console.log("GPS mis à jour :", d1.latitude, d1.longitude, "|", d2.latitude, d2.longitude);
+        })
+        .catch(error => console.error('Erreur lors de la récupération du GPS :', error));
+    }
+    
+    // Actualiser la position toutes les 5 secondes
+    setInterval(updateGPS, 5000);
   </script>
 </body>
 </html>
