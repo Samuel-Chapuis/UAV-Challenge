@@ -10,7 +10,7 @@ from flask import Flask, render_template, jsonify, Response
 
 # Imports locaux
 from video import loop_video
-from telecom_sim import DroneSimulator
+from globalVar import mother_drone
 # -------------------------------- #
 
 app = Flask(__name__)
@@ -28,7 +28,7 @@ def video_feed():
 @app.route('/gps')
 def gps():
     # On obtient des coordonnées simulées
-    latitude, longitude = DroneSimulator.listen_gps()
+    latitude, longitude = mother_drone.listen_gps()
     return jsonify(latitude=latitude, longitude=longitude)
 
 # Fonctions associées aux boutons du panneau gauche
