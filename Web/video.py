@@ -16,26 +16,23 @@ from ultralytics import YOLO
 
 
 # -------------------------------------------------------
-# Chargement du modèle une seule fois, en le plaçant sur le GPU si possible
-model_path = "runs/detect/train/weights/best.pt"  # Chemin vers vos poids personnalisés
+# Load the model once, move to GPU if available
+model_path = "runs/detect/train/weights/best.pt"  # Path to your custom weights
 model = YOLO(model_path)
 if torch.cuda.is_available():
     model.to("cuda")
-    print("✅ Utilisation du GPU pour l'inférence.")
+    print("✅ Using GPU for inference.")
 else:
-    print("⚠️  Aucun périphérique CUDA trouvé ; utilisation du CPU.")
+    print("⚠️  No CUDA device found; using CPU.")
+
 # -------------------------------------------------------
-
 cap = cv2.VideoCapture(0)
-
-
-##### Video Capture and Processing #####
 
 class Video(threading.Thread):
     def __init__(self, cam_index=0):
         super().__init__()
         self.cap = cv2.VideoCapture(cam_index)
-        self.running = self.cap.isOpened()  # vérifie si la caméra est ouverte
+        self.running = self.cap.isOpened()  # Check if the camera is open
         
         self.frame = None
         self.f_frame = None
@@ -50,20 +47,44 @@ class Video(threading.Thread):
         self.M2_LOWER_RED = np.array([130, 35, 200])
         self.M2_UPPER_RED = np.array([180, 255, 255])
         
-        # A supprimer plus tard
-        self.min_area = 500  
+        self.min_area = 500  # Example minimum area
+
+    def start(self):
+        # Start the thread and hence execute run() in a new thread.
+        super().start()
+
+    def run(self):
+        print("✅ Running in progress.")
+        # Main loop of the thread.
+        while self.running:
+            self.update()    # Capture a new frame
+            self.filter()    # Apply filtering to produce f_frame
+            self.predict()   # Apply prediction to update d_frame
+            self.show()      # Show the processed frame
+            time.sleep(0.03) # Delay to reduce CPU usage (~30 FPS)
+        cv2.destroyAllWindows()
+
+    def show(self):
+        # Display the best available frame.
+        # Prefer the detection frame if available, then the filtered frame, otherwise the raw frame.
+        if self.d_frame is not None:
+            cv2.imshow("Detection", self.d_frame)
+        elif self.f_frame is not None:
+            cv2.imshow("Filtered", self.f_frame)
+        elif self.frame is not None:
+            cv2.imshow("Video", self.frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            self.running = False
         
-        
+
     def stop(self):
         self.running = False
-        self.cap.release()  # libère la caméra
-
+        self.cap.release()  # Release the camera
 
     def update(self):
         success, frame = self.cap.read()
         if success:
             self.frame = frame
-
 
     def get_frame(self):
         if self.frame is not None:
@@ -71,37 +92,34 @@ class Video(threading.Thread):
             if success:
                 return buffer.tobytes()
         return None
-    
-    
+
     def get_f_frame(self):
         if self.f_frame is not None:
             success, buffer = cv2.imencode('.jpg', self.f_frame)
             if success:
                 return buffer.tobytes()
         return None
-    
-    
+
     def get_d_frame(self):
         if self.d_frame is not None:
             success, buffer = cv2.imencode('.jpg', self.d_frame)
             if success:
                 return buffer.tobytes()
         return None
-    
-    
+
     def filter(self):
-            self.frame = cv2.resize(self.frame, (1280, 1280), interpolation=cv2.INTER_CUBIC)
-            hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-            mask1 = cv2.inRange(hsv, self.M1_LOWER_RED, self.M1_UPPER_RED)
-            mask2 = cv2.inRange(hsv, self.M2_LOWER_RED, self.M2_UPPER_RED)
-            mask = mask1 + mask2
-            res = cv2.bitwise_and(self.frame, self.frame, mask=mask)
-            self.f_frame = cv2.addWeighted(self.frame, 0.5, res, 0.5, 0)
-    
-    
+        # Resize and apply a red filter (example)
+        self.frame = cv2.resize(self.frame, (1280, 1280), interpolation=cv2.INTER_CUBIC)
+        hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        mask1 = cv2.inRange(hsv, self.M1_LOWER_RED, self.M1_UPPER_RED)
+        mask2 = cv2.inRange(hsv, self.M2_LOWER_RED, self.M2_UPPER_RED)
+        mask = mask1 + mask2
+        res = cv2.bitwise_and(self.frame, self.frame, mask=mask)
+        self.f_frame = cv2.addWeighted(self.frame, 0.5, res, 0.5, 0)
+
     def predict(self):
+        # Run the model prediction on the filtered frame
         results = model.predict(source=self.f_frame, conf=0.25, verbose=False)
-        beacons = 0
         detections = results[0]
         annotated_frame = self.f_frame.copy()
         for box in detections.boxes:
@@ -113,9 +131,10 @@ class Video(threading.Thread):
             label = f"{class_name} {conf:.2f}"
             cv2.putText(annotated_frame, label, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        
-        self.beacons = len(detections.boxes)  # Compter le nombre de détections (beacons)
-        self.d_frame = annotated_frame.copy()  # Mettre à jour le frame annoté
+        self.beacons = len(detections.boxes)
+        self.d_frame = annotated_frame.copy()
+    
+
 
 
 
