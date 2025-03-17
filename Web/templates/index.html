@@ -276,8 +276,8 @@
     var drone2Path = [];
     
     // Création des polylignes pour tracer la trajectoire des 2 drones
-    var polyline1 = L.polyline([], {color: 'blue'}).addTo(map);
-    var polyline2 = L.polyline([], {color: 'red'}).addTo(map);
+    var polyline1 = L.polyline([], {color: 'yellow', opacity: 0.75}).addTo(map);
+    var polyline2 = L.polyline([], {color: 'red', opacity: 0.75}).addTo(map);
     
     // Fonction pour actualiser la position GPS des deux drones
     function updateGPS() {
