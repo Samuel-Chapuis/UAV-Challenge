@@ -1,5 +1,6 @@
 # Ignore build files
 .__pycache__
+Web/__pycache__/
 
 # Ignore raw data and preprocessed data
 /EmbededVideo/CustomAiModel/labelImg
@@ -18,3 +19,4 @@ yolo11n.pt
 !/runs/detect/train/
 /runs/detect/train/*
 !/runs/detect/train/weights/
+

@@ -7,10 +7,11 @@ webb.py - Cette partie du code gère l'application webb
 # -------------------------------- #
 # Import 
 from flask import Flask, render_template, jsonify, Response
+import cv2
 
 # Imports locaux
 from video import loop_video
-from globalVar import mother_drone, second_drone
+import globalVar
 # -------------------------------- #
 
 app = Flask(__name__)
@@ -23,13 +24,17 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(loop_video(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # On encode l’image stockée dans la variable globale
+    return Response(
+        cv2.imencode('.png', globalVar.video_image)[1].tobytes(),
+        mimetype='image/png'
+    )
 
 @app.route('/gps')
 def gps():
     # Obtention des coordonnées simulées pour les 2 drones
-    lat1, lon1 = mother_drone.listen_gps()
-    lat2, lon2 = second_drone.listen_gps()
+    lat1, lon1 = globalVar.mother_drone.listen_gps()
+    lat2, lon2 = globalVar.second_drone.listen_gps()
     return jsonify(
         drone1={'latitude': lat1, 'longitude': lon1},
         drone2={'latitude': lat2, 'longitude': lon2}

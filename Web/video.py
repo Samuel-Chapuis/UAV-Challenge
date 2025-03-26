@@ -11,6 +11,7 @@ import threading
 import numpy as np
 import time
 import torch
+import globalVar
 from ultralytics import YOLO
 # -------------------------------- #
 
@@ -61,7 +62,9 @@ class Video(threading.Thread):
             self.filter()    # Apply filtering to produce f_frame
             self.predict()   # Apply prediction to update d_frame
             self.show()      # Show the processed frame
-            time.sleep(0.03) # Delay to reduce CPU usage (~30 FPS)
+            time.sleep(0.03) # Delay to reduce CPU usage (~30 FPS) 
+            globalVar.video_image = self.d_frame  # Update the global variable with the latest frame
+            
         cv2.destroyAllWindows()
 
     def show(self):
@@ -87,25 +90,13 @@ class Video(threading.Thread):
             self.frame = frame
 
     def get_frame(self):
-        if self.frame is not None:
-            success, buffer = cv2.imencode('.jpg', self.frame)
-            if success:
-                return buffer.tobytes()
-        return None
+        return self.frame
 
     def get_f_frame(self):
-        if self.f_frame is not None:
-            success, buffer = cv2.imencode('.jpg', self.f_frame)
-            if success:
-                return buffer.tobytes()
-        return None
+        return self.f_frame
 
     def get_d_frame(self):
-        if self.d_frame is not None:
-            success, buffer = cv2.imencode('.jpg', self.d_frame)
-            if success:
-                return buffer.tobytes()
-        return None
+        return self.d_frame
 
     def filter(self):
         # Resize and apply a red filter (example)

@@ -10,3 +10,4 @@ from telecom_sim import DroneSimulator
 
 mother_drone = DroneSimulator()
 second_drone = DroneSimulator()
+video_image = None 
