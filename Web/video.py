@@ -61,9 +61,14 @@ class Video(threading.Thread):
             self.update()    # Capture a new frame
             self.filter()    # Apply filtering to produce f_frame
             self.predict()   # Apply prediction to update d_frame
-            self.show()      # Show the processed frame
+            # self.show()      # Show the processed frame
             time.sleep(0.03) # Delay to reduce CPU usage (~30 FPS) 
-            globalVar.video_image = self.d_frame  # Update the global variable with the latest frame
+            
+            if self.d_frame is not None:
+                globalVar.video_image = self.d_frame  
+                # éventuellement .copy() si vous modifiez d_frame plus tard
+            else:
+                globalVar.video_image = self.frame 
             
         cv2.destroyAllWindows()
 
@@ -145,3 +150,5 @@ def loop_video():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     video_thread.stop()
+
+

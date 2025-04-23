@@ -8,9 +8,9 @@ webb.py - Cette partie du code gère l'application webb
 # Import 
 from flask import Flask, render_template, jsonify, Response
 import cv2
+import time
 
 # Imports locaux
-from video import loop_video
 import globalVar
 # -------------------------------- #
 
@@ -24,11 +24,25 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    # On encode l’image stockée dans la variable globale
-    return Response(
-        cv2.imencode('.png', globalVar.video_image)[1].tobytes(),
-        mimetype='image/png'
-    )
+    def gen_frames():
+        while True:
+            frame = globalVar.video_image
+            if frame is None:
+                continue
+            success, encoded_image = cv2.imencode('.jpg', frame)
+            if not success:
+                continue
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' +
+                   encoded_image.tobytes() +
+                   b'\r\n')
+            
+            time.sleep(0.1)
+            
+    return Response(gen_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    
 
 @app.route('/gps')
 def gps():
