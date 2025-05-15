@@ -3,6 +3,7 @@
 import threading
 import random
 import math
+import time
 from pymavlink import mavutil
 # -------------------------------- #
 
@@ -71,6 +72,14 @@ class Drone(threading.Thread):
         new_lon = lon + math.degrees(delta_lon)
         return new_lat, new_lon
     
+    def monitor_statustext(duration_sec=5):
+        start_time = time.time()
+        while time.time() - start_time < duration_sec:
+            msg = self.recv_match(type='STATUSTEXT', blocking=False, timeout=1)
+            if msg:
+                print(f"Statut: {msg.text}")
+            else:
+                print("Aucun message de statut recu.")
 
     
 
@@ -135,3 +144,31 @@ class SubDrone(Drone):
             time.sleep(0.5)
 
         return self.wait_for_ack()
+    
+    
+def mission():
+    master_Drone = Drone("Master Drone", "udp:127.0.0.1:14550")
+    master_Drone.print_heartbeat()
+    sub_Drone = SubDrone("Sub Drone", "udp:127.0.0.1:15550")
+    sub_Drone.print_heartbeat()
+    
+    lat_touch, lon_touch, _ = master_Drone.get_current_position()
+    mission_ready = land_with_dolandstart()
+    
+    if mission_ready:
+        master_Drone.move_servo(11, 1150)\
+        time.sleep(0.7)
+        sub_Drone.set_mode("AUTO")
+        sub_Drone.mav.command_long_send(
+            sub_Drone.target_system,
+            sub_Drone.target_component,
+            mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+            0, 0, 0, 0, 0, 0, 0, 0
+        )
+        master_Drone.set_mode("LOITER")
+        time.sleep(120)
+        master_Drone.set_mode("RTL")
+        sub_Drone.monitor_statustext(duration_sec=10)
+    else:
+        master_Drone.set_mopde("RTL")
+    
