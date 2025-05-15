@@ -16,14 +16,7 @@ from ultralytics import YOLO
 
 
 # -------------------------------------------------------
-# Chargement du modèle une seule fois, en le plaçant sur le GPU si possible
-model_path = "runs/detect/train/weights/best.pt"  # Chemin vers vos poids personnalisés
-model = YOLO(model_path)
-if torch.cuda.is_available():
-    model.to("cuda")
-    print("✅ Utilisation du GPU pour l'inférence.")
-else:
-    print("⚠️  Aucun périphérique CUDA trouvé ; utilisation du CPU.")
+from model import model
 # -------------------------------------------------------
 
 cap = cv2.VideoCapture(0)
@@ -32,7 +25,7 @@ cap = cv2.VideoCapture(0)
 ##### Video Capture and Processing #####
 
 class Video(threading.Thread):
-    def __init__(self, cam_index=0):
+    def __init__(self, mod, cam_index=0):
         super().__init__()
         self.cap = cv2.VideoCapture(cam_index)
         self.running = self.cap.isOpened()  # vérifie si la caméra est ouverte
@@ -52,6 +45,7 @@ class Video(threading.Thread):
         
         # A supprimer plus tard
         self.min_area = 500  
+        self.mod = mod  # Modèle YOLO pour la détection d'objets
         
         
     def stop(self):
@@ -100,7 +94,7 @@ class Video(threading.Thread):
     
     
     def predict(self):
-        results = model.predict(source=self.f_frame, conf=0.25, verbose=False)
+        results = self.mod.predict(source=self.f_frame, conf=0.25, verbose=False)
         beacons = 0
         detections = results[0]
         annotated_frame = self.f_frame.copy()
@@ -122,7 +116,7 @@ class Video(threading.Thread):
 ##### Fonction génératrice pour le streaming vidéo #####
 
 def loop_video():
-    video_thread = Video()
+    video_thread = Video(model)
     video_thread.start()
     
     while video_thread.running:
