@@ -18,6 +18,8 @@ from collections import deque
 
 # -------------------------------------------------------
 from model import model
+from mav import mission
+from mission_2_UAVS_FINALEEE import function_de_matheo
 # -------------------------------------------------------
 
 cap = cv2.VideoCapture(0)
@@ -124,7 +126,10 @@ class Video(threading.Thread):
 
     def on_object_detected(self):
         print("🚨 Objet détecté ! Traitement dans un thread séparé...")
-        time.sleep(10)  # À remplacer par l'action réelle à effectuer
+        
+        mission()
+        # function_de_matheo()
+        
         print("✅ Traitement terminé.")
         self.detection_triggered = False
 
