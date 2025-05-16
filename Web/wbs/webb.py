@@ -9,7 +9,7 @@ webb.py - Cette partie du code gère l'application webb
 from flask import Flask, render_template, jsonify, Response
 
 # Imports locaux
-from video import loop_video
+from video.video import loop_video
 from globalVar import mother_drone, second_drone
 # -------------------------------- #
 

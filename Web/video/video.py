@@ -17,9 +17,9 @@ from collections import deque
 
 
 # -------------------------------------------------------
-from model import model
-from mav import mission
-from mission_2_UAVS_FINALEEE import function_de_matheo
+from video.model import model
+# from mav import mission
+# from mission_2_UAVS_FINALEEE import function_de_matheo
 # -------------------------------------------------------
 
 cap = cv2.VideoCapture(0)
@@ -118,7 +118,7 @@ class Video(threading.Thread):
         # Mise à jour de l'historique
         self.detection_history.append(self.beacons > 0)
 
-        # Déclenchement uniquement si 4+ détections sur les 6 dernières frames
+        # Déclenchement uniquement si 4+ détections 
         if not self.detection_triggered and self.detection_history.count(True) >= 4:
             self.detection_triggered = True
             threading.Thread(target=self.on_object_detected, daemon=True).start()
@@ -127,7 +127,9 @@ class Video(threading.Thread):
     def on_object_detected(self):
         print("🚨 Objet détecté ! Traitement dans un thread séparé...")
         
-        mission()
+        time.sleep(10)
+        
+        # mission()
         # function_de_matheo()
         
         print("✅ Traitement terminé.")

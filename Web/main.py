@@ -10,7 +10,10 @@ Version ..... : 2.1.0
 
 # -------------------------------- #
 # Import Locaux
-from webb import app
+from wbs.webb import app
+from video.model import model
+
+# Import Globaux
 import cv2
 import threading
 import numpy as np
@@ -19,7 +22,7 @@ import torch
 from ultralytics import YOLO
 # -------------------------------- #
 
-from model import model
+
 
 
 if __name__ == '__main__':    

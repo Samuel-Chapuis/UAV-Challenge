@@ -5,7 +5,7 @@ globalVar.py - Ce fichier contient les objets globaux utilisés dans l'applicati
 """
 
 # -------------------------------- #
-from telecom_sim import DroneSimulator
+from drone.telecom_sim import DroneSimulator
 # -------------------------------- #
 
 mother_drone = DroneSimulator()
