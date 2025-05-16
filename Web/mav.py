@@ -156,7 +156,7 @@ def mission():
     mission_ready = land_with_dolandstart()
     
     if mission_ready:
-        master_Drone.move_servo(11, 1150)\
+        master_Drone.move_servo(11, 1150)
         time.sleep(0.7)
         sub_Drone.set_mode("AUTO")
         sub_Drone.mav.command_long_send(
