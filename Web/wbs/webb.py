@@ -28,8 +28,8 @@ def video_feed():
 @app.route('/gps')
 def gps():
     # Obtention des coordonnées simulées pour les 2 drones
-    lat1, lon1 = master_Drone.listen_gps()
-    lat2, lon2 = sub_Drone.listen_gps()
+    lat1, lon1 = master_Drone.get_current_position()
+    lat2, lon2 = sub_Drone.get_current_position()
     return jsonify(
         drone1={'latitude': lat1, 'longitude': lon1},
         drone2={'latitude': lat2, 'longitude': lon2}

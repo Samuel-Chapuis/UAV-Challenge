@@ -22,7 +22,7 @@ class DroneSimulator(threading.Thread):
           
             
     
-    def listen_gps(self):
+    def get_current_position(self):
         global current_lat, current_lon
         # Ajout d'une petite variation pour simuler le mouvement
         delta_lat = random.uniform(-0.0005, 0.0005)
