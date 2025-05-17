@@ -12,18 +12,14 @@ import numpy as np
 import time
 import torch
 from ultralytics import YOLO
+from collections import deque
 # -------------------------------- #
 
 
 # -------------------------------------------------------
-# Chargement du modèle une seule fois, en le plaçant sur le GPU si possible
-model_path = "runs/detect/train/weights/best.pt"  # Chemin vers vos poids personnalisés
-model = YOLO(model_path)
-if torch.cuda.is_available():
-    model.to("cuda")
-    print("✅ Utilisation du GPU pour l'inférence.")
-else:
-    print("⚠️  Aucun périphérique CUDA trouvé ; utilisation du CPU.")
+from video.model import model
+# from mav import mission
+# from mission_2_UAVS_FINALEEE import function_de_matheo
 # -------------------------------------------------------
 
 cap = cv2.VideoCapture(0)
@@ -32,10 +28,10 @@ cap = cv2.VideoCapture(0)
 ##### Video Capture and Processing #####
 
 class Video(threading.Thread):
-    def __init__(self, cam_index=0):
+    def __init__(self, mod, cam_index=0):
         super().__init__()
         self.cap = cv2.VideoCapture(cam_index)
-        self.running = self.cap.isOpened()  # vérifie si la caméra est ouverte
+        self.running = self.cap.isOpened()
         
         self.frame = None
         self.f_frame = None
@@ -43,15 +39,18 @@ class Video(threading.Thread):
         
         self.detected = False
         self.beacons = 0
+        self.mod = mod
         
-        # Filter parameters
+        # 🔧 Historique des détections sur 6 frames
+        self.detection_history = deque(maxlen=6)
+        self.detection_triggered = False
+
         self.M1_LOWER_RED = np.array([130, 35, 200])
         self.M1_UPPER_RED = np.array([180, 255, 255])
         self.M2_LOWER_RED = np.array([130, 35, 200])
         self.M2_UPPER_RED = np.array([180, 255, 255])
         
-        # A supprimer plus tard
-        self.min_area = 500  
+        self.min_area = 500
         
         
     def stop(self):
@@ -98,12 +97,11 @@ class Video(threading.Thread):
             res = cv2.bitwise_and(self.frame, self.frame, mask=mask)
             self.f_frame = cv2.addWeighted(self.frame, 0.5, res, 0.5, 0)
     
-    
     def predict(self):
-        results = model.predict(source=self.f_frame, conf=0.25, verbose=False)
-        beacons = 0
+        results = self.mod.predict(source=self.f_frame, conf=0.25, verbose=False)
         detections = results[0]
         annotated_frame = self.f_frame.copy()
+        
         for box in detections.boxes:
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
             conf = float(box.conf[0])
@@ -114,15 +112,33 @@ class Video(threading.Thread):
             cv2.putText(annotated_frame, label, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
-        self.beacons = len(detections.boxes)  # Compter le nombre de détections (beacons)
-        self.d_frame = annotated_frame.copy()  # Mettre à jour le frame annoté
+        self.beacons = len(detections.boxes)
+        self.d_frame = annotated_frame.copy()
+
+        # Mise à jour de l'historique
+        self.detection_history.append(self.beacons > 0)
+
+        # Déclenchement uniquement si 4+ détections 
+        if not self.detection_triggered and self.detection_history.count(True) >= 4:
+            self.detection_triggered = True
+            threading.Thread(target=self.on_object_detected, daemon=True).start()
 
 
+    def on_object_detected(self):
+        print("🚨 Objet détecté ! Traitement dans un thread séparé...")
+        
+        time.sleep(10)
+        
+        # mission()
+        # function_de_matheo()
+        
+        print("✅ Traitement terminé.")
+        self.detection_triggered = False
 
 ##### Fonction génératrice pour le streaming vidéo #####
 
 def loop_video():
-    video_thread = Video()
+    video_thread = Video(model)
     video_thread.start()
     
     while video_thread.running:

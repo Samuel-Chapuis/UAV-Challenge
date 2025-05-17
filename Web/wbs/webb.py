@@ -9,8 +9,8 @@ webb.py - Cette partie du code gère l'application webb
 from flask import Flask, render_template, jsonify, Response
 
 # Imports locaux
-from video import loop_video
-from globalVar import mother_drone, second_drone
+from video.video import loop_video
+from globalVar import master_Drone, sub_Drone
 # -------------------------------- #
 
 app = Flask(__name__)
@@ -28,8 +28,8 @@ def video_feed():
 @app.route('/gps')
 def gps():
     # Obtention des coordonnées simulées pour les 2 drones
-    lat1, lon1 = mother_drone.listen_gps()
-    lat2, lon2 = second_drone.listen_gps()
+    lat1, lon1 = master_Drone.listen_gps()
+    lat2, lon2 = sub_Drone.listen_gps()
     return jsonify(
         drone1={'latitude': lat1, 'longitude': lon1},
         drone2={'latitude': lat2, 'longitude': lon2}

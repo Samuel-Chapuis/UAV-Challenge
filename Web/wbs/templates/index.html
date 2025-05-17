@@ -307,6 +307,53 @@
     
     // Actualiser la position toutes les 5 secondes
     setInterval(updateGPS, 5000);
+
+		/* ---------- Variables globales ---------- */
+	let overlayCanvas = null;          // contiendra le canvas figé
+	const leftContainer = document.getElementById('leftContainer');
+	const liveImg       = leftContainer.querySelector('img');
+
+	/* ---------- Gel / Dégel visuel ---------- */
+	function freezeFrame() {
+		// Crée un canvas transparent exactement par-dessus l’image
+		overlayCanvas = document.createElement('canvas');
+		overlayCanvas.width  = liveImg.clientWidth;
+		overlayCanvas.height = liveImg.clientHeight;
+		overlayCanvas.style.position = 'absolute';
+		overlayCanvas.style.top  = 0;
+		overlayCanvas.style.left = 0;
+		overlayCanvas.style.width  = '100%';
+		overlayCanvas.style.height = '100%';
+		overlayCanvas.style.zIndex = 10;          // devant l’image
+
+		// Dessine la frame actuelle dans le canvas
+		const ctx = overlayCanvas.getContext('2d');
+		ctx.drawImage(liveImg, 0, 0, overlayCanvas.width, overlayCanvas.height);
+
+		// Empile le canvas au-dessus du flux
+		leftContainer.appendChild(overlayCanvas);
+	}
+
+	function unfreezeFrame() {
+		if (overlayCanvas) {
+		overlayCanvas.remove();        // retire le canvas
+		overlayCanvas = null;
+		}
+	}
+
+	/* ---------- Interception des boutons ---------- */
+	function triggerAction(endpoint) {
+		fetch(endpoint)                  // appel Flask (inchangé)
+		.then(r => r.json())
+		.then(data => {
+			if (endpoint === '/stop')   freezeFrame();
+			if (endpoint === '/start')  unfreezeFrame();
+			console.log('Action', data.action, 'ok');
+		})
+		.catch(err => console.error('Erreur sur', endpoint, err));
+	}
   </script>
+
+  
 </body>
 </html>
