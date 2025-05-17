@@ -140,16 +140,32 @@
 	.transparent-icon img {
 		background: transparent; /* Ensure the background is transparent */
 	}
+	  /* --- Affichage des compteurs dans la top-bar --- */
+	.top-bar{
+		display:flex;          /* pour l’alignement vertical */
+		align-items:center;
+	}
+
+	.top-bar .display{
+		background-color: #555; /* même fond que les boutons */
+		color: #fff;            /* texte blanc */
+		border: none;
+		border-radius: 5px;
+		padding: 10px 20px;
+		font-weight: 600;
+		min-width: 80px;
+		text-align: center;
+		/* tu peux ajouter cursor:pointer si tu comptes cliquer dessus */
+	}
   </style>
 </head>
 <body>
   <!-- Barre de boutons en haut -->
-  <div class="top-bar">
-    <button onclick="triggerAction('/start')">Action 1</button>
-    <button onclick="triggerAction('/stop')">Action 2</button>
-    <button onclick="triggerAction('/left_change_view')">Action 3</button>
-  </div>
-
+	<div class="top-bar">
+		<div id="disp1"  class="display"></div>
+		<div id="disp2"   class="display"></div>
+		<div id="disp3"   class="display"></div>
+	</div>
   <!-- Conteneur principal pour les panneaux -->
   <div class="container">
     <!-- Panneau gauche : flux vidéo -->
@@ -352,6 +368,22 @@
 		})
 		.catch(err => console.error('Erreur sur', endpoint, err));
 	}
+
+
+	  /* --------- Rafraîchissement des displays --------- */
+	function refreshDisplays(){
+		fetch('/displays')
+		.then(r => r.json())
+		.then(d => {
+			document.getElementById('disp1').textContent = d.disp1;
+			document.getElementById('disp2').textContent = d.disp2;
+			document.getElementById('disp3').textContent = d.disp3;
+		})
+		.catch(err => console.error('Erreur displays', err));
+	}
+	/* Met à jour toutes les 2 s + première mise à jour immédiate */
+	refreshDisplays();
+	setInterval(refreshDisplays, 2000);
   </script>
 
   

@@ -77,5 +77,53 @@ def right_change_view():
     print("Changement de vue (panneau droit) déclenché")
     return jsonify(success=True, action="right_change_view")
 
+@app.route('/displays')
+def displays():
+    """
+    Retourne un JSON : {disp1: ..., disp2: ..., disp3: ...}
+    Chaque champ est calculé par sa fonction dédiée.
+    En cas d'erreur on renvoie 'N/A' au lieu d'un 500.
+    """
+    try:
+        disp1 = get_disp1()
+    except Exception as e:
+        print("[/displays] erreur disp1 :", e)
+        disp1 = "Master : N/A"
+
+    try:
+        disp2 = get_disp2()
+    except Exception as e:
+        print("[/displays] erreur disp2 :", e)
+        disp2 = "Phoenix : N/A"
+
+    return jsonify(disp1=disp1,
+                   disp2=disp2,
+                   disp3="-")      # provisoire
+    
+def get_disp1():
+    """
+    Tension batterie du drone maître, formatée « 12.3 V ».
+    La méthode peut :
+      - renvoyer un float
+      - ou un tuple (voltage, percent, …)
+    On normalise dans tous les cas.
+    """
+    v = master_Drone.get_battery_voltage()   # ← votre API
+    if isinstance(v, (list, tuple)):
+        v = v[0]
+    return f"Master : {float(v):.1f} V"
+
+def get_disp2():
+    """
+    Tension batterie du drone esclave.
+    Même logique que ci-dessus.
+    """
+    v = sub_Drone.get_battery_voltage()
+    if isinstance(v, (list, tuple)):
+        v = v[0]
+    return f"Phoenix : {float(v):.1f} V"
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)

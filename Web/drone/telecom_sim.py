@@ -30,4 +30,9 @@ class DroneSimulator(threading.Thread):
         self.current_lat += delta_lat
         self.current_lon += delta_lon
         return self.current_lat, self.current_lon
+    
+    def get_battery_voltage(self):
+        # Simule une tension de batterie entre 3.7V et 4.2V
+        voltage = random.uniform(3.7, 4.2)
+        return voltage
 
