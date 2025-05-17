@@ -19,3 +19,5 @@ yolo11n.pt
 /runs/detect/train/*
 !/runs/detect/train/weights/
 Web/__pycache__
+Web/wbs/__pycache__
+Web/drone/__pycache__
